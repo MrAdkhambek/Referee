@@ -8,19 +8,19 @@
 
     <View
         android:id="@+id/top_bar"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
         android:background="@android:color/holo_red_light"
-        app:layout_constraintBottom_toTopOf="@id/bottom_bar"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toLeftOf="@id/bottom_bar" />
 
     <View
         android:id="@+id/bottom_bar"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
         android:background="@android:color/holo_blue_light"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/top_bar" />
+        app:layout_constraintLeft_toRightOf="@id/top_bar"
+        app:layout_constraintRight_toRightOf="parent" />
 
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/top_score_text_view"
