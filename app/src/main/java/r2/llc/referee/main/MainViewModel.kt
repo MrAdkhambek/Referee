@@ -1,57 +1,52 @@
 package r2.llc.referee.main
 
-import android.os.CountDownTimer
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import r2.llc.referee.main.mvp.MainContract
-import r2.llc.referee.main.mvp.MainModelImpl
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
 
 class MainViewModel : ViewModel() {
 
-    private var model: MainModelImpl = MainModelImpl()
+    private val _scoreFlow: MutableStateFlow<MainModel> = MutableStateFlow(MainModel())
+    val scoreFlow: StateFlow<MainModel> get() = _scoreFlow.asStateFlow()
 
-    private val _scoreLiveData: MutableLiveData<MainContract.Model> = MutableLiveData(model)
-    val scoreLiveData: LiveData<MainContract.Model> get() = _scoreLiveData
+    private val _timerFlow: MutableStateFlow<Long> = MutableStateFlow(0)
+    val timerFlow: StateFlow<Long> get() = _timerFlow.asStateFlow()
 
-    private val _timerLiveData: MutableLiveData<Long> = MutableLiveData(0)
-    val timerLiveData: LiveData<Long> get() = _timerLiveData
+    private val _isStartFlow: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    val isStartFlow: StateFlow<Boolean> get() = _isStartFlow.asStateFlow()
 
-    private val _isStartLiveData: MutableLiveData<Boolean> = MutableLiveData(false)
-    val isStartLiveData: LiveData<Boolean> get() = _isStartLiveData
-
-    private val _resultLiveData: MutableLiveData<MainContract.Model> = MutableLiveData()
-    val resultLiveData: LiveData<MainContract.Model> get() = _resultLiveData
+    private val _resultFlow: MutableSharedFlow<MainModel> = MutableSharedFlow()
+    val resultFlow: SharedFlow<MainModel> get() = _resultFlow.asSharedFlow()
 
     fun onGoalTop() {
-        model = model.copy(topScore = model.topScore + 1)
-        _scoreLiveData.value = model
+        val lastScore = scoreFlow.value
+        _scoreFlow.value = lastScore.copy(topScore = lastScore.topScore + 1)
     }
 
     fun onGoalBottom() {
-        model = model.copy(bottomScore = model.bottomScore + 1)
-        _scoreLiveData.value = model
+        val lastScore = scoreFlow.value
+        _scoreFlow.value = lastScore.copy(bottomScore = lastScore.bottomScore + 1)
     }
 
     fun onStart() {
-        val time = 60 * 1000L
-        _isStartLiveData.value = true
-
-        object : CountDownTimer(time, 1000L) {
-            override fun onTick(millisUntilFinished: Long) {
-                _timerLiveData.value = (time - millisUntilFinished) / 1000
+        var time = 0L
+        _isStartFlow.value = true
+        viewModelScope.launch(Dispatchers.IO) {
+            while (++time < 60L) {
+                delay(1000L)
+                _timerFlow.value = time
             }
 
-            override fun onFinish() {
-                _resultLiveData.value = model
-            }
-        }.start()
+            _resultFlow.emit(scoreFlow.value)
+        }
     }
 
     fun onReset() {
-        model = MainModelImpl()
-        _scoreLiveData.value = model
-        _isStartLiveData.value = false
+        _scoreFlow.value = MainModel()
+        _isStartFlow.value = false
     }
 }

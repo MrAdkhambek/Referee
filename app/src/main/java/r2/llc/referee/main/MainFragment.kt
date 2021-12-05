@@ -7,9 +7,11 @@ import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import r2.llc.referee.databinding.FragmentMainBinding
-import r2.llc.referee.main.mvp.MainContract
 
 
 class MainFragment : Fragment(){
@@ -41,50 +43,40 @@ class MainFragment : Fragment(){
             vm.onStart()
         }
 
-        vm.isStartLiveData
-            .observe(viewLifecycleOwner, ::onChangeGameStatus)
+        vm.isStartFlow
+            .onEach { isStarted ->
+                binding.playButton.isVisible = !isStarted
+                binding.timerTextView.isVisible = isStarted
+            }.launchIn(viewLifecycleOwner.lifecycleScope)
 
-        vm.resultLiveData
-            .observe(viewLifecycleOwner, ::showResult)
+        vm.resultFlow
+            .onEach { model ->
+                val winner = if (model.topScore > model.bottomScore) {
+                    "winner is top command"
+                } else "winner is bottom command"
 
-        vm.scoreLiveData
-            .observe(viewLifecycleOwner, ::updateScore)
+                Snackbar.make(
+                    binding.root,
+                    winner,
+                    Snackbar.LENGTH_INDEFINITE
+                ).apply {
+                    setAction("Reset") {
+                        vm.onReset()
+                    }
+                }.show()
+            }.launchIn(viewLifecycleOwner.lifecycleScope)
 
-        vm.timerLiveData
-            .observe(viewLifecycleOwner, ::updateTimer)
-    }
+        vm.scoreFlow
+            .onEach { model ->
+                binding.topScoreTextView.text = model.topScore.toString()
+                binding.bottomScoreTextView.text = model.bottomScore.toString()
+            }.launchIn(viewLifecycleOwner.lifecycleScope)
 
-
-    private fun updateScore(model: MainContract.Model) {
-        binding.topScoreTextView.text = model.topScore.toString()
-        binding.bottomScoreTextView.text = model.bottomScore.toString()
-    }
-
-    private fun updateTimer(time: Long) {
-        val sec = time % 60
-        val min = time / 60
-        binding.timerTextView.text = String.format("%d : %d", min, sec)
-    }
-
-    private fun showResult(model: MainContract.Model) {
-        val winner = if (model.topScore > model.bottomScore) {
-            "winner is top command"
-        } else "winner is bottom command"
-
-//        App.INSTANCE.router.navigateTo(Screens.Result(winner))
-        Snackbar.make(
-            binding.root,
-            winner,
-            Snackbar.LENGTH_INDEFINITE
-        ).apply {
-            setAction("Reset") {
-                vm.onReset()
-            }
-        }.show()
-    }
-
-    private fun onChangeGameStatus(isStarted: Boolean) {
-        binding.playButton.isVisible = !isStarted
-        binding.timerTextView.isVisible = isStarted
+        vm.timerFlow
+            .onEach { time ->
+                val sec = time % 60
+                val min = time / 60
+                binding.timerTextView.text = String.format("%d : %d", min, sec)
+            }.launchIn(viewLifecycleOwner.lifecycleScope)
     }
 }
