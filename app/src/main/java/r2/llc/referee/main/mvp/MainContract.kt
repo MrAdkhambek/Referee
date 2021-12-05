@@ -25,7 +25,6 @@ interface MainContract {
     interface Model {
         val topScore: Long
         val bottomScore: Long
-        val isStarted: Boolean
     }
 }
 
