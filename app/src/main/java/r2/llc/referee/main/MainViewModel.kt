@@ -2,51 +2,44 @@ package r2.llc.referee.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import r2.llc.referee.repository.MainRepository
+import javax.inject.Inject
 
 
-class MainViewModel : ViewModel() {
+@HiltViewModel
+class MainViewModel @Inject constructor(
+    private val mainRepository: MainRepository
+) : ViewModel() {
 
-    private val _scoreFlow: MutableStateFlow<MainModel> = MutableStateFlow(MainModel())
-    val scoreFlow: StateFlow<MainModel> get() = _scoreFlow.asStateFlow()
+    private val _state: MutableStateFlow<ResultState<Model>> = MutableStateFlow(ResultState.Loading)
+    val state: StateFlow<ResultState<Model>> get() = _state.asStateFlow()
 
-    private val _timerFlow: MutableStateFlow<Long> = MutableStateFlow(0)
-    val timerFlow: StateFlow<Long> get() = _timerFlow.asStateFlow()
-
-    private val _isStartFlow: MutableStateFlow<Boolean> = MutableStateFlow(false)
-    val isStartFlow: StateFlow<Boolean> get() = _isStartFlow.asStateFlow()
-
-    private val _resultFlow: MutableSharedFlow<MainModel> = MutableSharedFlow()
-    val resultFlow: SharedFlow<MainModel> get() = _resultFlow.asSharedFlow()
-
-    fun onGoalTop() {
-        val lastScore = scoreFlow.value
-        _scoreFlow.value = lastScore.copy(topScore = lastScore.topScore + 1)
-    }
-
-    fun onGoalBottom() {
-        val lastScore = scoreFlow.value
-        _scoreFlow.value = lastScore.copy(bottomScore = lastScore.bottomScore + 1)
-    }
-
-    fun onStart() {
-        var time = 0L
-        _isStartFlow.value = true
-        viewModelScope.launch(Dispatchers.IO) {
-            while (++time < 60L) {
-                delay(1000L)
-                _timerFlow.value = time
+    init {
+        viewModelScope.launch {
+            _state.value = ResultState.Loading
+            try {
+                val model = mainRepository.loadItems()
+                _state.value = ResultState.Resource(model)
+            } catch (t: Throwable) {
+                _state.value =  ResultState.Error(t)
             }
-
-            _resultFlow.emit(scoreFlow.value)
         }
     }
-
-    fun onReset() {
-        _scoreFlow.value = MainModel()
-        _isStartFlow.value = false
-    }
 }
+
+sealed class ResultState<out T> {
+    object Loading : ResultState<Nothing>()
+    data class Resource(val model: Model) : ResultState<Model>()
+    data class Error(val error: Throwable) : ResultState<Nothing>()
+}
+
+data class Model(
+    val list: List<String>
+)

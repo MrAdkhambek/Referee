@@ -1,6 +1,9 @@
 plugins {
     id 'com.android.application'
     id 'kotlin-android'
+
+    id 'kotlin-kapt'
+    id 'dagger.hilt.android.plugin'
 }
 
 android {
@@ -41,7 +44,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.4.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.2'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    
+
     implementation 'com.github.terrakok:cicerone:7.1'
 
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2'
@@ -50,6 +53,12 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.0'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0'
+    implementation 'androidx.fragment:fragment-ktx:1.4.0'
+
+    implementation 'com.google.dagger:hilt-android:2.40'
+    kapt 'com.google.dagger:hilt-compiler:2.40'
+
+    implementation 'com.github.MrAdkhambek:LeoAdapter:0.3.0'
 
 
     testImplementation 'junit:junit:4.+'
