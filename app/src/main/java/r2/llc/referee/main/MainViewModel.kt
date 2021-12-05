@@ -4,6 +4,7 @@ import android.os.CountDownTimer
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import r2.llc.referee.base.SingleLiveData
 import r2.llc.referee.main.mvp.MainContract
 import r2.llc.referee.main.mvp.MainModelImpl
 
@@ -21,7 +22,7 @@ class MainViewModel : ViewModel() {
     private val _isStartLiveData: MutableLiveData<Boolean> = MutableLiveData(false)
     val isStartLiveData: LiveData<Boolean> get() = _isStartLiveData
 
-    private val _resultLiveData: MutableLiveData<MainContract.Model> = MutableLiveData()
+    private val _resultLiveData: SingleLiveData<MainContract.Model> = SingleLiveData()
     val resultLiveData: LiveData<MainContract.Model> get() = _resultLiveData
 
     fun onGoalTop() {

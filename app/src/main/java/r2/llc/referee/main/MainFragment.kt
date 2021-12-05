@@ -12,7 +12,7 @@ import r2.llc.referee.databinding.FragmentMainBinding
 import r2.llc.referee.main.mvp.MainContract
 
 
-class MainFragment : Fragment(){
+class MainFragment : Fragment() {
 
     private lateinit var vm: MainViewModel
     private lateinit var binding: FragmentMainBinding
@@ -42,7 +42,10 @@ class MainFragment : Fragment(){
         }
 
         vm.isStartLiveData
-            .observe(viewLifecycleOwner, ::onChangeGameStatus)
+            .observe(viewLifecycleOwner, { isStarted ->
+                binding.playButton.isVisible = !isStarted
+                binding.timerTextView.isVisible = isStarted
+            })
 
         vm.resultLiveData
             .observe(viewLifecycleOwner, ::showResult)
@@ -66,7 +69,9 @@ class MainFragment : Fragment(){
         binding.timerTextView.text = String.format("%d : %d", min, sec)
     }
 
-    private fun showResult(model: MainContract.Model) {
+    private fun showResult(model: MainContract.Model?) {
+        model ?: return
+
         val winner = if (model.topScore > model.bottomScore) {
             "winner is top command"
         } else "winner is bottom command"
