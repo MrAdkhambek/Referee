@@ -1,80 +1,55 @@
 package r2.llc.referee
 
 import android.os.Bundle
-import android.os.CountDownTimer
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isVisible
-import com.google.android.material.snackbar.Snackbar
-import r2.llc.referee.databinding.ActivityMainBinding
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentTransaction
+import com.github.terrakok.cicerone.Navigator
+import com.github.terrakok.cicerone.NavigatorHolder
+import com.github.terrakok.cicerone.Router
+import com.github.terrakok.cicerone.androidx.AppNavigator
+import com.github.terrakok.cicerone.androidx.FragmentScreen
+import dagger.hilt.android.AndroidEntryPoint
+import r2.llc.referee.listeners.BroadcastLiveData
+import javax.inject.Inject
 
-class MainActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainBinding
+@AndroidEntryPoint
+class MainActivity : AppCompatActivity(R.layout.activity_main) {
 
-    private var topScore: Int = 0
-    private var bottomScore: Int = 0
+    @Inject lateinit var navigatorHolder: NavigatorHolder
+    @Inject lateinit var router: Router
 
-    private var isStart: Boolean = false
+    private val navigator: Navigator = object : AppNavigator(this, R.id.container_main) {
+        override fun setupFragmentTransaction(
+            screen: FragmentScreen,
+            fragmentTransaction: FragmentTransaction,
+            currentFragment: Fragment?,
+            nextFragment: Fragment,
+        ) {
+            fragmentTransaction.setCustomAnimations(
+                android.R.anim.fade_in,
+                android.R.anim.fade_out
+            )
+            super.setupFragmentTransaction(screen, fragmentTransaction, currentFragment, nextFragment)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        binding = ActivityMainBinding.inflate(layoutInflater)
         super.onCreate(savedInstanceState)
-        setContentView(binding.root)
-
-        binding.topBar.setOnClickListener {
-            topScore++
-            binding.topScoreTextView.text = topScore.toString()
-        }
-
-        binding.bottomBar.setOnClickListener {
-            bottomScore++
-            binding.bottomScoreTextView.text = bottomScore.toString()
-        }
-
-        binding.timerTextView.isVisible = false
-        binding.playButton.setOnClickListener {
-            isStart = true
-            binding.playButton.isVisible = false
-            binding.timerTextView.isVisible = true
-            startTimer()
+        if (savedInstanceState == null) {
+            router.replaceScreen(Screens.Main())
         }
     }
 
-    private fun startTimer() {
-        object : CountDownTimer(60 * 1000L, 1000L) {
-            override fun onTick(millisUntilFinished: Long) {
-                val sec = 60 - (millisUntilFinished / 1000) % 60
-                val min = millisUntilFinished / (60 * 1000L)
-                binding.timerTextView.text = String.format("%d : %d", min, sec)
-            }
-
-            override fun onFinish() {
-                isStart = false
-                showSnac()
-            }
-        }.start()
+    override fun onResumeFragments() {
+        super.onResumeFragments()
+        navigatorHolder.setNavigator(navigator)
     }
 
-    private fun showSnac() {
-        val winner = if (topScore > bottomScore) {
-            "winner is top command"
-        } else "winner is bottom command"
-
-        Snackbar.make(
-            binding.root,
-            winner,
-            Snackbar.LENGTH_INDEFINITE
-        ).apply {
-            setAction("Reset") {
-                topScore = 0
-                bottomScore = 0
-
-                binding.playButton.isVisible = true
-                binding.timerTextView.isVisible = false
-
-                binding.topScoreTextView.text = topScore.toString()
-                binding.bottomScoreTextView.text = bottomScore.toString()
-            }
-        }.show()
+    override fun onPause() {
+        navigatorHolder.removeNavigator()
+        super.onPause()
     }
 }
