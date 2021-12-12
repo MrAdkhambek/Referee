@@ -7,13 +7,11 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.adam.leo.recycler.setupAdapter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import r2.llc.referee.R
 import r2.llc.referee.databinding.FragmentMainBinding
-import r2.llc.referee.databinding.ItemNameBinding
 
 
 @AndroidEntryPoint
@@ -34,28 +32,16 @@ class MainFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.recyclerView.layoutManager = LinearLayoutManager(view.context)
-        val adapter = binding.recyclerView.setupAdapter<String, ItemNameBinding>(
-            ItemNameBinding::inflate
-        ) { itemBinding, _, item ->
-            itemBinding.textView.text = item
-        }
+        vm
+            .networkLiveData
+            .observe(viewLifecycleOwner) { isOnline ->
 
+            }
 
         vm
-            .state
-            .onEach { state ->
-                when (state) {
-                    ResultState.Loading -> {
-                        // TODO()
-                    }
-                    is ResultState.Error -> {
-                        // TODO()
-                    }
-                    is ResultState.Resource -> {
-                        adapter.setList(state.model.list)
-                    }
-                }
+            .networkFlow
+            .onEach { isOnline ->
+                binding.networkStatus.text = getString(R.string.network, if (isOnline) "ON" else "OFF")
             }.launchIn(viewLifecycleOwner.lifecycleScope)
     }
 }

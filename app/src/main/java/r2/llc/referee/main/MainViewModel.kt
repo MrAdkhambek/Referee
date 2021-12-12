@@ -1,45 +1,34 @@
 package r2.llc.referee.main
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import r2.llc.referee.repository.MainRepository
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onEach
+import r2.llc.referee.listeners.BroadcastLiveData
+import r2.llc.referee.listeners.ListenerUtil
+import r2.llc.referee.listeners.NetworkLiveData
 import javax.inject.Inject
 
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val mainRepository: MainRepository
+    val networkLiveData: NetworkLiveData,
+    val broadcastLiveData: BroadcastLiveData,
+
+    private val listenerUtil: ListenerUtil
 ) : ViewModel() {
 
-    private val _state: MutableStateFlow<ResultState<Model>> = MutableStateFlow(ResultState.Loading)
-    val state: StateFlow<ResultState<Model>> get() = _state.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            _state.value = ResultState.Loading
-            try {
-                val model = mainRepository.loadItems()
-                _state.value = ResultState.Resource(model)
-            } catch (t: Throwable) {
-                _state.value =  ResultState.Error(t)
-            }
-        }
+    suspend fun loadData() {
+        delay(1000)
     }
-}
 
-sealed class ResultState<out T> {
-    object Loading : ResultState<Nothing>()
-    data class Resource(val model: Model) : ResultState<Model>()
-    data class Error(val error: Throwable) : ResultState<Nothing>()
+    val networkFlow: Flow<Boolean> =
+        listenerUtil
+            .networkFlow()
+            .distinctUntilChanged()
+            .flowOn(Dispatchers.IO)
 }
-
-data class Model(
-    val list: List<String>
-)
